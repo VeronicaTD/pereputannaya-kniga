@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Перепутанная книга — тренажёр чтения</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f7f0e1; --paper2:#fdf9ef; --ink:#3d2f2a; --ink-soft:#7a6a60;
+    --accent:#2e7d6b; --accent-soft:#dcefe9; --berry:#b0495e; --berry-soft:#f6e2e6;
+    --gold:#d9a441; --card:#ffffff; --shadow:0 4px 14px rgba(61,47,42,.10);
+    --ok:#2e7d6b; --bad:#c0392b;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Andika','Verdana',sans-serif; background:var(--paper); color:var(--ink);
+    min-height:100vh; display:flex; justify-content:center; padding:24px 12px 60px;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{width:100%; max-width:760px;}
+  .topbar{display:flex; align-items:center; gap:10px; margin-bottom:14px;}
+  .btn{
+    font-family:inherit; font-size:18px; border:none; border-radius:14px; cursor:pointer;
+    padding:12px 22px; background:var(--accent); color:#fff; box-shadow:var(--shadow);
+    transition:transform .08s ease, background .15s;
+  }
+  .btn:hover{transform:translateY(-1px);} .btn:active{transform:translateY(1px);}
+  .btn.secondary{background:#fff; color:var(--accent); border:2px solid var(--accent);}
+  .btn.ghost{background:transparent; color:var(--ink-soft); border:2px solid #d8cbb8; box-shadow:none;}
+  .btn.small{font-size:15px; padding:8px 14px; border-radius:10px;}
+  .btn:disabled{opacity:.45; cursor:default; transform:none;}
+  h1{font-size:30px; margin:6px 0 4px;}
+  h2{font-size:24px; margin-bottom:6px;}
+  .subtitle{color:var(--ink-soft); font-size:17px; margin-bottom:16px;}
+  .card{background:var(--card); border-radius:18px; box-shadow:var(--shadow); padding:22px 24px; margin-bottom:16px;}
+  .word{font-size:34px; letter-spacing:.5px;}
+  .word-row{
+    display:flex; align-items:center; gap:14px; padding:10px 6px;
+    border-bottom:1px dashed #e6dcc8;
+  }
+  .word-row:last-child{border-bottom:none;}
+  .word-row .w{flex:1; font-size:32px;}
+  .icon-btn{
+    font-family:inherit; border:none; background:var(--accent-soft); color:var(--accent);
+    border-radius:10px; width:44px; height:44px; font-size:20px; cursor:pointer; flex:none;
+  }
+  .icon-btn.flag{background:#f3ede0; color:#b09a7a;}
+  .icon-btn.flag.on{background:var(--berry-soft); color:var(--berry);}
+  .grid-letters{display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:16px 0;}
+  .letter-cell{
+    font-family:inherit; font-size:34px; padding:14px 0; text-align:center; background:#fff;
+    border:3px solid #e6dcc8; border-radius:14px; cursor:pointer; user-select:none;
+  }
+  .letter-cell.hit{background:var(--accent-soft); border-color:var(--accent); color:var(--accent);}
+  .letter-cell.miss{background:var(--berry-soft); border-color:var(--berry);}
+  .columns{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .col-head{font-size:22px; text-align:center; padding:8px; border-radius:12px; margin-bottom:6px;}
+  .pairs{display:grid; grid-template-columns:1fr 1fr; gap:8px 18px;}
+  .pair-word{display:flex; align-items:center; gap:8px; font-size:30px; padding:6px 4px;}
+  .ladder{display:flex; flex-direction:column-reverse; gap:8px; margin:14px 0;}
+  .rung{
+    font-size:32px; text-align:center; padding:12px; border-radius:14px; background:#fff;
+    border:3px solid #e6dcc8; display:flex; align-items:center; justify-content:center; gap:12px;
+  }
+  .rung.current{border-color:var(--gold); background:#fdf6e3;}
+  .rung.done{border-color:var(--accent); background:var(--accent-soft);}
+  .rung.locked{opacity:.35;}
+  .choice-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0;}
+  .choice{
+    font-family:inherit; font-size:26px; padding:18px 12px; background:#fff; border:3px solid #e6dcc8;
+    border-radius:16px; cursor:pointer; text-align:center;
+  }
+  .choice.right{background:var(--accent-soft); border-color:var(--ok);}
+  .choice.wrong{background:var(--berry-soft); border-color:var(--bad);}
+  .phrase{font-size:30px; padding:12px 6px; border-bottom:1px dashed #e6dcc8; display:flex; align-items:center; gap:12px;}
+  .phrase:last-child{border-bottom:none;}
+  .phrase .t{flex:1;}
+  .textbook{font-size:26px; line-height:1.7; background:var(--paper2); border-radius:16px; padding:20px 24px;}
+  .textbook p{margin-bottom:10px;}
+  .timer{
+    display:inline-flex; align-items:center; gap:10px; background:#fff; border-radius:12px;
+    padding:8px 16px; font-size:20px; box-shadow:var(--shadow);
+  }
+  .timer b{font-variant-numeric:tabular-nums;}
+  .record{font-size:15px; color:var(--ink-soft);}
+  .hint-box{background:#fdf6e3; border:2px dashed var(--gold); border-radius:14px; padding:14px 18px; font-size:19px; margin:12px 0;}
+  .hl-qu,.hl-x{font-weight:700; color:var(--berry);}
+  .page-slots{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:18px 0;}
+  .slot{
+    background:#fff; border-radius:14px; border:2px solid #e6dcc8; padding:14px 8px; text-align:center;
+    cursor:pointer; transition:transform .08s;
+  }
+  .slot:hover{transform:translateY(-2px);}
+  .slot .num{font-size:24px; font-weight:700;}
+  .slot .nm{font-size:13px; color:var(--ink-soft); margin-top:4px; min-height:32px;}
+  .slot.done{background:var(--accent-soft); border-color:var(--accent);}
+  .slot.locked{opacity:.45; cursor:default;}
+  .slot.locked:hover{transform:none;}
+  .center{text-align:center;}
+  .big-emoji{font-size:54px;}
+  .note{color:var(--ink-soft); font-size:16px; margin-top:8px;}
+  .row-actions{display:flex; gap:12px; flex-wrap:wrap; margin-top:16px; justify-content:center;}
+  .rule{font-size:20px; background:var(--accent-soft); border-radius:12px; padding:12px 16px; margin:10px 0;}
+  .memorize{display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin:12px 0;}
+  .memo-card{background:#fff; border-radius:14px; box-shadow:var(--shadow); padding:16px 22px; text-align:center;}
+  .memo-card .w{font-size:34px;}
+  .memo-card .r{font-size:16px; color:var(--ink-soft);}
+  .progress-line{height:10px; background:#e6dcc8; border-radius:6px; overflow:hidden; margin:10px 0 20px;}
+  .progress-line i{display:block; height:100%; background:var(--accent); border-radius:6px; transition:width .3s;}
+  @media (max-width:560px){
+    .word-row .w{font-size:26px;} .word{font-size:28px;} .phrase{font-size:24px;}
+    .textbook{font-size:21px;} .choice{font-size:21px;} .grid-letters{grid-template-columns:repeat(4,1fr);}
+    h1{font-size:25px;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+// ===================== ДАННЫЕ =====================
+const CHAPTERS = [
+  {id:1, name:'Буквы вернулись'},
+  {id:2, name:'Слова-близнецы'},
+  {id:3, name:'Два голоса C'},
+  {id:4, name:'Два голоса G'},
+  {id:5, name:'Страница QU и X'},
+  {id:6, name:'Лесенки'},
+  {id:7, name:'Перепутанные строки'},
+  {id:8, name:'Книга восстановлена'},
+];
+
+const CH1 = {
+  grids:[
+    {title:'Нажми на все b', targets:['b'], cells:'bddbdbbddbdbdbbdbdbd'.split(''),
+     rule:'b — это «би»: палочка слева, кружок справа. d — это «ди»: кружок слева, палочка справа.'},
+    {title:'Нажми на все h', targets:['h'], cells:'nhпhnпhпnhhпnпhnпnhh'.split(''),
+     rule:'n — это «эн»: выглядит как русская «п», но читается «н». h — это «эйч»: читается легко, почти как наша «х». А «п» в английском нет совсем!'},
+    {title:'Нажми на все p', targets:['p'], cells:'pрppрpрppрpрppрpрpрp'.split(''),
+     rule:'p — это «пи»: читается как наша «п». А «р» — русская буква, в английском её нет!'},
+  ],
+  words:['big','bad','bat','box','dog','dig','dad','red','hat','hen','hot','hand','not','pen','name','nine','can','pat','pop','cap'],
+};
+
+const CH2 = {
+  pairs:[['bed','bad'],['big','dig'],['bog','dog'],['bud','dud'],['hot','not'],['bag','bug'],
+         ['bat','bet'],['hat','hut'],['bed','bud'],['bet','bit'],['bat','but'],['sit','set'],
+         ['not','nut'],['dig','dug'],['big','beg'],['mad','mud']],
+};
+
+const CH3 = {
+  k:['cat','cap','cup','cut','cot','can','cake','cave','code'],
+  s:['city','cent','cell','ice','face','race','mice','rice','nice'],
+  phrases:['A cat in a cup.','A nice face.','Rice on a plate.','A cat in a cage.','Mice in the city.','A nice cake.'],
+  rule:'C перед E, I, Y обычно читается как /с/. В остальных случаях — как /к/.',
+};
+
+const CH4 = {
+  g:['gap','gas','gum','got','gate','game','bag','big','dog'],
+  j:['gem','gel','giant','age','cage','page','stage','huge','magic'],
+  exceptions:[['get','гет'],['give','гив'],['girl','гёл']],
+  phrases:['A big dog.','A gem in a bag.','A page in a book.','A huge cage.','A dog at the gate.','A magic game.'],
+  rule:'G перед E, I, Y обычно читается как /дж/. В остальных случаях — как /г/.',
+};
+
+const CH5 = {
+  qu:['quiz','quit','quick','quack','quilt'],
+  x:['box','fox','six','fix','mix','wax'],
+  phrases:['Six red pens.','A fox in a box.','Fix the bed.','Mix it.','A quick cat.','A red quilt.'],
+};
+
+const CH6 = {
+  ladders:[
+    ['bad','bed','bid','big','dig','dog'],
+    ['hen','pen','pin','pan','pat','hat'],
+    ['cap','cup','cut','cat','can','man'],
+    ['ice','nice','rice','race','face'],
+    ['age','cage','page','pale','pal','pan'],
+  ],
+};
+
+const CH7 = {
+  words:['cat','ice','gem','box','quiz','dog','cage','six','name','cup','pen','hat','big','nice','page',
+         'fox','cut','quick','bag','face','hot','zip','vet','mix','cake','huge','bed','not','game','wax'],
+  twins:[
+    ['A big dog.','A bad dog.'],
+    ['A hen in a pen.','A pen in a bag.'],
+    ['A cat in a box.','A fox in a box.'],
+    ['A red pen.','A red hen.'],
+    ['A nice cake.','A nice cage.'],
+    ['Six cups.','Six caps.'],
+    ['A gem in a bag.','A gem in a box.'],
+    ['Pat has a bat.','Pat has a bag.'],
+  ],
+};
+
+const CH8 = {
+  memorize:[['puts','путс'],['what','уот'],['says','сез']],
+  texts:[
+    {title:'A box in the city',
+     lines:['Ben is in the city. He has a big box.',
+            'A dog runs to Ben. It digs and digs.',
+            'Ben puts the box on a bench.',
+            '"What is in it?" asks a man.',
+            'Ben lifts the lid.',
+            'Six red pens! A nice gem! A page!',
+            'The dog has the page.',
+            '"Drop it!" says Ben.'],
+     quiz:[
+       {q:'What is in the box?', options:['Six red pens, a gem and a page.','A big cake.','Mice and rice.'], right:0},
+       {q:'Who has the page?', options:['Ben.','The dog.','The man.'], right:1},
+     ]},
+    {title:'Max and the quilt',
+     lines:['Max has a red quilt. A cat sits on it.',
+            '"Get up!" says Max. The cat is quick.',
+            'It runs to a box. Max pets the cat.',
+            '"What a nice cat!" says Max.'],
+     quiz:[
+       {q:'What does Max have?', options:['A red quilt.','A red box.','A quick fox.'], right:0},
+       {q:'Where does the cat run?', options:['To the city.','To a bench.','To a box.'], right:2},
+     ]},
+  ],
+};
+
+// ===================== ХРАНИЛИЩЕ =====================
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem('pk_'+k); return v===null?d:JSON.parse(v);}catch(e){return d;} },
+  set(k, v){ try{ localStorage.setItem('pk_'+k, JSON.stringify(v)); }catch(e){} },
+};
+const getProgress = () => store.get('progress', {});   // {chapterId: {done:true, best:seconds}}
+const setProgress = (p) => store.set('progress', p);
+const getTrouble = () => store.get('trouble', []);     // [word,...]
+const setTrouble = (t) => store.set('trouble', t);
+
+function markDone(chId, seconds){
+  const p = getProgress();
+  const prev = p[chId] || {};
+  p[chId] = {done:true, best: prev.best==null ? seconds : (seconds!=null && seconds<prev.best ? seconds : prev.best)};
+  setProgress(p);
+}
+function toggleTrouble(word){
+  let t = getTrouble();
+  if(t.includes(word)) t = t.filter(w=>w!==word); else t.push(word);
+  setTrouble(t);
+  return t.includes(word);
+}
+
+// ===================== ОЗВУЧКА =====================
+let voices = [];
+function loadVoices(){ voices = speechSynthesis.getVoices(); }
+if('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US'; u.rate = 0.8; u.pitch = 1.0;
+  const v = voices.find(v=>v.lang && v.lang.startsWith('en') && /female|samantha|zira|google us english/i.test(v.name))
+        || voices.find(v=>v.lang && v.lang.startsWith('en'));
+  if(v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+
+// ===================== УТИЛИТЫ =====================
+const app = document.getElementById('app');
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function shuffle(a){ const r=[...a]; for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [r[i],r[j]]=[r[j],r[i]];} return r; }
+function fmtTime(s){ if(s==null) return '—'; const m=Math.floor(s/60), ss=s%60; return (m? m+' мин ':'')+ss+' с'; }
+
+// Таймер экрана: стартует только по кнопке «Старт»
+let timerInt = null, timerSec = 0, timerRunning = false, timerUsed = false;
+function startTimer(reset){
+  stopTimer(); if(reset) timerSec = 0;
+  timerRunning = true;
+  timerInt = setInterval(()=>{ timerSec++; const el=document.getElementById('tm-v'); if(el) el.textContent = timerSec+' с'; }, 1000);
+}
+function stopTimer(){ timerRunning = false; if(timerInt){ clearInterval(timerInt); timerInt=null; } }
+function timerHTML(){
+  const v = timerRunning ? timerSec : 0;
+  const btn = timerRunning
+    ? `<button class="btn small" id="tm-start" disabled>Идёт…</button>`
+    : `<button class="btn small" id="tm-start">▶ Старт</button>`;
+  return `<div class="timer">⏱ <b id="tm-v">${v} с</b> ${btn} <span class="record" id="tm-best"></span></div>`;
+}
+function bindTimer(){
+  const b = document.getElementById('tm-start');
+  if(b) b.onclick = ()=>{ if(!timerRunning){ timerUsed = true; startTimer(true); b.textContent='Идёт…'; b.disabled=true; } };
+}
+
+// Подсветка qu / x (состояние переключателя)
+let highlightOn = true;
+function hl(word){
+  if(!highlightOn) return esc(word);
+  return esc(word).replace(/qu/gi,'<span class="hl-qu">qu</span>').replace(/x/gi,'<span class="hl-x">x</span>');
+}
+
+// Строка слова: слово + прослушать + флажок «сложно»
+function wordRow(w, useHl){
+  const trouble = getTrouble().includes(w);
+  return `<div class="word-row">
+    <span class="w">${useHl?hl(w):esc(w)}</span>
+    <button class="icon-btn" data-say="${esc(w)}" title="Послушать">🔊</button>
+    <button class="icon-btn flag ${trouble?'on':''}" data-flag="${esc(w)}" title="Мне ещё потренировать">🚩</button>
+  </div>`;
+}
+function phraseRow(p){
+  return `<div class="phrase"><span class="t">${esc(p)}</span>
+    <button class="icon-btn" data-say="${esc(p)}" title="Послушать">🔊</button></div>`;
+}
+
+// ===================== ЭКРАНЫ =====================
+function goHome(){ stopTimer(); renderHome(); }
+
+function renderHome(){
+  const p = getProgress();
+  const trouble = getTrouble();
+  const doneCount = CHAPTERS.filter(c=>p[c.id] && p[c.id].done).length;
+  app.innerHTML = `
+    <div class="center">
+      <div class="big-emoji">📖</div>
+      <h1>Перепутанная книга</h1>
+      <div class="subtitle">Страницы волшебной книги перепутались и разлетелись.<br>Проходи главы — и книга соберётся снова!</div>
+    </div>
+    <div class="progress-line"><i style="width:${doneCount/8*100}%"></i></div>
+    <div class="page-slots">
+      ${CHAPTERS.map(c=>{
+        const done = p[c.id] && p[c.id].done;
+        const rec = done && p[c.id].best!=null ? `<div class="record">⏱ ${fmtTime(p[c.id].best)}</div>` : '';
+        return `<div class="slot ${done?'done':''}" data-ch="${c.id}">
+          <div class="num">${done?'✅':'📄'} ${c.id}</div>
+          <div class="nm">${c.name}</div>${rec}
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="row-actions">
+      <button class="btn secondary" id="btn-trouble">🚩 Мне ещё потренировать (${trouble.length})</button>
+    </div>
+    <p class="note center">Как работать: прочитай сама → послушай 🔊 → прочитай ещё раз. Сложное слово отмечай 🚩.</p>
+  `;
+  app.querySelectorAll('.slot').forEach(s=> s.onclick = ()=> renderChapter(+s.dataset.ch));
+  document.getElementById('btn-trouble').onclick = renderTrouble;
+}
+
+function renderTrouble(){
+  const t = getTrouble();
+  app.innerHTML = `
+    <div class="topbar"><button class="btn small ghost" id="back">← К книге</button></div>
+    <h2>🚩 Мне ещё потренировать</h2>
+    <div class="subtitle">${t.length? 'Прочитай каждое слово сама, потом послушай и прочитай ещё раз. Получилось легко — сними флажок!' : 'Пока пусто. Отмечай сложные слова флажком 🚩 в любой главе.'}</div>
+    <div class="card">${t.map(w=>wordRow(w)).join('')}</div>
+    ${t.length? `<div class="row-actions"><button class="btn" id="btn-clear">Всё получилось — очистить список</button></div>`:''}
+  `;
+  document.getElementById('back').onclick = goHome;
+  const clear = document.getElementById('btn-clear');
+  if(clear) clear.onclick = ()=>{ setTrouble([]); renderTrouble(); };
+}
+
+// --- Завершение главы ---
+function renderChapterDone(chId, withTime){
+  const secs = (withTime && timerUsed) ? timerSec : null;
+  stopTimer(); timerUsed = false;
+  markDone(chId, secs);
+  const ch = CHAPTERS.find(c=>c.id===chId);
+  const best = getProgress()[chId].best;
+  app.innerHTML = `
+    <div class="center card" style="margin-top:40px">
+      <div class="big-emoji">🎉</div>
+      <h2>Глава ${chId} пройдена!</h2>
+      <div class="subtitle">Страница «${ch.name}» вернулась в книгу.</div>
+      ${secs!=null? `<p style="font-size:20px">Время: <b>${fmtTime(secs)}</b> ${best!=null?` · Рекорд: <b>${fmtTime(best)}</b>`:''}</p>
+      <p class="note">Сначала — правильно, потом — быстрее. Загляни позже и побей свой рекорд!</p>`:''}
+      <div class="row-actions">
+        <button class="btn" id="next">${chId<8?'Следующая глава →':'К книге'}</button>
+        <button class="btn secondary" id="home">К книге</button>
+      </div>
+    </div>`;
+  document.getElementById('home').onclick = goHome;
+  document.getElementById('next').onclick = chId<8 ? ()=>renderChapter(chId+1) : goHome;
+}
+
+function chapterHeader(chId, step, steps, title){
+  return `
+    <div class="topbar">
+      <button class="btn small ghost" id="back">← К книге</button>
+      <span class="record">Глава ${chId} · шаг ${step}/${steps}</span>
+    </div>
+    <div class="progress-line"><i style="width:${step/steps*100}%"></i></div>
+    <h2>${title}</h2>`;
+}
+
+// ===================== ГЛАВА 1 =====================
+function renderCh1(stage, gridIdx){
+  // stage 0: правила+сетки, 1: слова
+  if(stage===0){
+    const g = CH1.grids[gridIdx];
+    const found = new Set();
+    app.innerHTML = chapterHeader(1, gridIdx+1, 4, 'Буквы вернулись') + `
+      <div class="rule">${g.rule}</div>
+      <div class="card center">
+        <h2 style="font-size:22px">${g.title}</h2>
+        <div class="grid-letters" id="grid">
+          ${g.cells.map((c,i)=>`<div class="letter-cell" data-i="${i}">${c==='р'||c==='п'?c:esc(c)}</div>`).join('')}
+        </div>
+        <p class="note" id="msg">Нажимай только на нужные буквы.</p>
+      </div>`;
+    document.getElementById('back').onclick = goHome;
+    const need = g.cells.map((c,i)=>g.targets.includes(c)?i:null).filter(x=>x!==null);
+    app.querySelectorAll('.letter-cell').forEach(cell=>{
+      cell.onclick = ()=>{
+        const i = +cell.dataset.i;
+        if(g.targets.includes(g.cells[i])){
+          if(!found.has(i)){ found.add(i); cell.classList.add('hit'); speak(g.cells[i]); }
+          if(found.size===need.length){
+            document.getElementById('msg').textContent = 'Отлично! Все буквы найдены.';
+            setTimeout(()=>{ gridIdx+1 < CH1.grids.length ? renderCh1(0, gridIdx+1) : renderCh1(1); }, 900);
+          }
+        } else {
+          cell.classList.add('miss'); setTimeout(()=>cell.classList.remove('miss'), 500);
+        }
+      };
+    });
+  } else {
+    app.innerHTML = chapterHeader(1, 4, 4, 'Буквы вернулись') + `
+      <div class="subtitle">Теперь прочитай слова. В каждом спряталась буква из задания — не дай ей себя обмануть!</div>
+      ${timerHTML()}
+      <div class="card">${CH1.words.map(w=>wordRow(w)).join('')}</div>
+      <div class="row-actions"><button class="btn" id="done">Прочитала всё ✓</button></div>`;
+    document.getElementById('back').onclick = goHome;
+    bindTimer();
+    const p = getProgress()[1];
+    if(p && p.best!=null) document.getElementById('tm-best').textContent = 'рекорд: '+fmtTime(p.best);
+    document.getElementById('done').onclick = ()=>renderChapterDone(1, true);
+  }
+}
+
+// ===================== ГЛАВА 2 =====================
+function renderCh2(mode, data){
+  // mode 0: пары, 1: вперемешку, 2: послушай и найди
+  if(mode===0){
+    app.innerHTML = chapterHeader(2, 1, 3, 'Слова-близнецы') + `
+      <div class="subtitle">Слова очень похожи! Прочитай каждую пару. Чем они различаются?</div>
+      <div class="card"><div class="pairs">
+        ${CH2.pairs.map(([a,b])=>`
+          <div class="pair-word"><span>${esc(a)}</span><button class="icon-btn" data-say="${esc(a)}">🔊</button></div>
+          <div class="pair-word"><span>${esc(b)}</span><button class="icon-btn" data-say="${esc(b)}">🔊</button></div>`).join('')}
+      </div></div>
+      <div class="row-actions"><button class="btn" id="next">Дальше: вперемешку →</button></div>`;
+    document.getElementById('back').onclick = goHome;
+    document.getElementById('next').onclick = ()=>renderCh2(1);
+  } else if(mode===1){
+    const words = shuffle(CH2.pairs.flat());
+    app.innerHTML = chapterHeader(2, 2, 3, 'Слова-близнецы') + `
+      <div class="subtitle">Те же слова, но теперь вперемешку. Прочитай каждое, потом послушай и проверь себя.</div>
+      ${timerHTML()}
+      <div class="card">${words.map(w=>wordRow(w)).join('')}</div>
+      <div class="row-actions"><button class="btn" id="next">Дальше: послушай и найди →</button></div>`;
+    document.getElementById('back').onclick = goHome;
+    bindTimer();
+    document.getElementById('next').onclick = ()=>{ stopTimer(); renderCh2(2, {round:0, score:0}); };
+  } else {
+    // послушай и найди: 8 раундов по 4 варианта
+    const {round, score} = data;
+    if(round>=8){ renderChapterDone(2, false); return; }
+    const pair = CH2.pairs[round*2 % CH2.pairs.length];
+    const pair2 = CH2.pairs[(round*2+1) % CH2.pairs.length];
+    const options = shuffle([pair[0], pair[1], pair2[0], pair2[1]]);
+    const answer = pair[Math.floor(Math.random()*2)];
+    app.innerHTML = chapterHeader(2, 3, 3, 'Слова-близнецы') + `
+      <div class="subtitle">Послушай слово и нажми на него. Раунд ${round+1} из 8. Верно: ${score}</div>
+      <div class="row-actions"><button class="btn" id="play">🔊 Послушать слово</button></div>
+      <div class="choice-grid">
+        ${options.map(o=>`<button class="choice" data-w="${esc(o)}">${esc(o)}</button>`).join('')}
+      </div>
+      <p class="note center" id="fb"></p>`;
+    document.getElementById('back').onclick = goHome;
+    document.getElementById('play').onclick = ()=>speak(answer);
+    speak(answer);
+    app.querySelectorAll('.choice').forEach(c=>{
+      c.onclick = ()=>{
+        if(c.dataset.w===answer){
+          c.classList.add('right');
+          document.getElementById('fb').textContent = 'Верно! Теперь прочитай это слово вслух.';
+          app.querySelectorAll('.choice').forEach(x=>x.disabled=true);
+          setTimeout(()=>renderCh2(2,{round:round+1, score:score+1}), 1400);
+        } else {
+          c.classList.add('wrong'); c.disabled = true;
+          document.getElementById('fb').textContent = 'Не то. Послушай ещё раз!';
+        }
+      };
+    });
+  }
+}
+
+// ===================== ГЛАВЫ 3 и 4 (C и G) =====================
+function renderCG(chId, stage){
+  const D = chId===3 ? CH3 : CH4;
+  const letters = chId===3 ? 'C' : 'G';
+  const heads = chId===3 ? ['/к/ — как в cat','/с/ — перед e, i, y'] : ['/г/ — как в bag','/дж/ — перед e, i, y'];
+  const steps = chId===4 ? 4 : 3;
+  if(stage===0){
+    app.innerHTML = chapterHeader(chId, 1, steps, `Два голоса ${letters}`) + `
+      <div class="subtitle">У буквы ${letters} два голоса. Прочитай слова в каждой группе. Подсказку можно открыть кнопкой.</div>
+      <div class="row-actions" style="justify-content:flex-start"><button class="btn small secondary" id="hint">💡 Подсказка</button></div>
+      <div id="hint-box"></div>
+      <div class="columns">
+        <div><div class="col-head" style="background:var(--accent-soft)">${heads[0]}</div>
+          <div class="card">${D[ chId===3?'k':'g' ].map(w=>wordRow(w)).join('')}</div></div>
+        <div><div class="col-head" style="background:var(--berry-soft)">${heads[1]}</div>
+          <div class="card">${D[ chId===3?'s':'j' ].map(w=>wordRow(w)).join('')}</div></div>
+      </div>
+      <div class="row-actions"><button class="btn" id="next">Дальше: всё вперемешку →</button></div>`;
+    document.getElementById('back').onclick = goHome;
+    document.getElementById('hint').onclick = ()=>{
+      document.getElementById('hint-box').innerHTML = `<div class="hint-box">${D.rule}</div>`;
+    };
+    document.getElementById('next').onclick = ()=>renderCG(chId, 1);
+  } else if(stage===1){
+    const words = shuffle([...(chId===3?D.k:D.g), ...(chId===3?D.s:D.j)]);
+    app.innerHTML = chapterHeader(chId, 2, steps, `Два голоса ${letters}`) + `
+      <div class="subtitle">А теперь все слова перемешались! Прочитай каждое — сама реши, какой голос у ${letters}.</div>
+      ${timerHTML()}
+      <div class="card">${words.map(w=>wordRow(w)).join('')}</div>
+      <div class="row-actions"><button class="btn" id="next">${chId===4?'Дальше →':'Дальше: фразы →'}</button></div>`;
+    document.getElementById('back').onclick = goHome;
+    bindTimer();
+    document.getElementById('next').onclick = ()=>{ stopTimer(); renderCG(chId, chId===4?2:2); };
+  } else if(stage===2 && chId===4){
+    // карточка исключений только для G
+    app.innerHTML = chapterHeader(4, 3, steps, 'Эти слова запоминаем') + `
+      <div class="subtitle">Эти три слова — хитрые. В них G перед E и I всё равно читается как /г/. Их просто запоминаем:</div>
+      <div class="memorize">
+        ${CH4.exceptions.map(([w,r])=>`<div class="memo-card"><div class="w">${esc(w)}</div><div class="r">${esc(r)}</div>
+          <button class="icon-btn" data-say="${esc(w)}">🔊</button></div>`).join('')}
+      </div>
+      <div class="row-actions"><button class="btn" id="next">Дальше: фразы →</button></div>`;
+    document.getElementById('back').onclick = goHome;
+    document.getElementById('next').onclick = ()=>renderCG(4, 3.5);
+  } else {
+    // фразы
+    const stepNum = chId===4 ? 4 : 3;
+    app.innerHTML = chapterHeader(chId, stepNum, steps, `Фразы с ${letters}`) + `
+      <div class="subtitle">Прочитай фразы. Сначала сама, потом послушай и прочитай ещё раз.</div>
+      ${timerHTML()}
+      <div class="card">${D.phrases.map(p=>phraseRow(p)).join('')}</div>
+      <div class="row-actions"><button class="btn" id="done">Прочитала всё ✓</button></div>`;
+    document.getElementById('back').onclick = goHome;
+    bindTimer();
+    document.getElementById('done').onclick = ()=>renderChapterDone(chId, true);
+  }
+}
+
+// ===================== ГЛАВА 5 (QU и X) =====================
+function renderCh5(stage){
+  if(stage===0){
+    app.innerHTML = chapterHeader(5, 1, 2, 'Страница QU и X') + `
+      <div class="rule">qu читается как /кв/: <b>qu</b>iz. &nbsp; x читается как /кс/: bo<b>x</b>.</div>
+      <div class="subtitle">Прочитай слова. Сочетания выделены цветом — нажми «Убрать подсветку» и попробуй без неё.</div>
+      ${timerHTML()}
+      <div class="row-actions" style="justify-content:flex-start">
+        <button class="btn small secondary" id="toggle">${highlightOn?'Убрать подсветку':'Показать подсветку'}</button>
+      </div>
+      <div class="card">${[...CH5.qu, ...CH5.x].map(w=>wordRow(w,true)).join('')}</div>
+      <div class="row-actions"><button class="btn" id="next">Дальше: фразы →</button></div>`;
+    document.getElementById('back').onclick = goHome;
+    bindTimer();
+    document.getElementById('toggle').onclick = ()=>{ highlightOn=!highlightOn; renderCh5(0); };
+    document.getElementById('next').onclick = ()=>{ stopTimer(); renderCh5(1); };
+  } else {
+    app.innerHTML = chapterHeader(5, 2, 2, 'Фразы с QU и X') + `
+      <div class="subtitle">Прочитай фразы. Сначала сама, потом послушай и прочитай ещё раз.</div>
+      ${timerHTML()}
+      <div class="card">${CH5.phrases.map(p=>phraseRow(p)).join('')}</div>
+      <div class="row-actions"><button class="btn" id="done">Прочитала всё ✓</button></div>`;
+    document.getElementById('back').onclick = goHome;
+    bindTimer();
+    document.getElementById('done').onclick = ()=>renderChapterDone(5, true);
+  }
+}
+
+// ===================== ГЛАВА 6 (Лесенки) =====================
+function renderCh6(stage, data){
+  if(stage===0){
+    app.innerHTML = chapterHeader(6, 1, 2, 'Лесенки') + `
+      <div class="subtitle">Пять лесенок. В каждой слово меняется на одну букву — читай ступеньку за ступенькой, следующая откроется сама.</div>
+      <div class="card">
+        ${CH6.ladders.map((l,i)=>`<div class="word-row"><span class="w" style="font-size:24px">Лесенка ${i+1}: ${l[0]} → … → ${l[l.length-1]}</span>
+          <button class="btn small" data-lad="${i}">Идти →</button></div>`).join('')}
+      </div>`;
+    document.getElementById('back').onclick = goHome;
+    app.querySelectorAll('[data-lad]').forEach(b=> b.onclick = ()=>renderCh6(1, {lad:+b.dataset.lad, rung:0}));
+  } else {
+    const {lad, rung} = data;
+    const ladder = CH6.ladders[lad];
+    app.innerHTML = chapterHeader(6, 2, 2, `Лесенка ${lad+1}`) + `
+      <div class="subtitle">Прочитай выделенную ступеньку вслух и нажми ✓ — откроется следующая.</div>
+      <div class="ladder">
+        ${ladder.map((w,i)=>{
+          const cls = i<rung?'done':(i===rung?'current':'locked');
+          return `<div class="rung ${cls}"><span>${esc(w)}</span>
+            ${i===rung?`<button class="icon-btn" data-say="${esc(w)}">🔊</button>`:''}
+            ${i<rung?'✓':''}</div>`;
+        }).join('')}
+      </div>
+      <div class="row-actions">
+        <button class="btn" id="ok">Прочитала ✓</button>
+      </div>`;
+    document.getElementById('back').onclick = goHome;
+    document.getElementById('ok').onclick = ()=>{
+      if(rung+1 < ladder.length) renderCh6(1, {lad, rung:rung+1});
+      else renderLadderShuffle(lad);
+    };
+  }
+}
+function renderLadderShuffle(lad){
+  const words = shuffle(CH6.ladders[lad]);
+  app.innerHTML = chapterHeader(6, 2, 2, `Лесенка ${lad+1} — вперемешку`) + `
+    <div class="subtitle">Лесенка пройдена! А теперь те же слова вперемешку — так нельзя угадать по памяти.</div>
+    ${timerHTML()}
+    <div class="card">${words.map(w=>wordRow(w)).join('')}</div>
+    <div class="row-actions">
+      <button class="btn" id="back-lad">К списку лесенок</button>
+      <button class="btn secondary" id="fin">Завершить главу ✓</button>
+    </div>`;
+  document.getElementById('back').onclick = goHome;
+  bindTimer();
+  document.getElementById('back-lad').onclick = ()=>{ stopTimer(); renderCh6(0); };
+  document.getElementById('fin').onclick = ()=>renderChapterDone(6, false);
+}
+
+// ===================== ГЛАВА 7 (Перепутанные строки) =====================
+function renderCh7(stage, data){
+  if(stage===0){
+    const words = shuffle(CH7.words);
+    app.innerHTML = chapterHeader(7, 1, 2, 'Перепутанные строки') + `
+      <div class="subtitle">Все слова книги перемешались! Прочитай их без подсказок — ты уже всё это знаешь.</div>
+      ${timerHTML()}
+      <div class="card">${words.map(w=>wordRow(w)).join('')}</div>
+      <div class="row-actions"><button class="btn" id="next">Дальше: фразы-близнецы →</button></div>`;
+    document.getElementById('back').onclick = goHome;
+    bindTimer();
+    document.getElementById('next').onclick = ()=>{ stopTimer(); renderCh7(1, {round:0, score:0}); };
+  } else {
+    const {round, score} = data;
+    if(round>=CH7.twins.length){ renderChapterDone(7, false); return; }
+    const pair = CH7.twins[round];
+    const answer = pair[Math.floor(Math.random()*2)];
+    app.innerHTML = chapterHeader(7, 2, 2, 'Фразы-близнецы') + `
+      <div class="subtitle">Раунд ${round+1} из ${CH7.twins.length}. Верно: ${score}</div>
+      <div class="card">
+        <p style="font-size:19px; margin-bottom:8px">1. Прочитай обе фразы вслух.</p>
+        ${pair.map(p=>phraseRow(p)).join('')}
+        <p style="font-size:19px; margin:10px 0 8px">2. Теперь послушай одну из них и нажми на неё.</p>
+        <div class="row-actions" style="justify-content:flex-start"><button class="btn" id="play">🔊 Послушать одну</button></div>
+        <div class="choice-grid" id="choices" style="display:none">
+          ${pair.map(p=>`<button class="choice" data-p="${esc(p)}">${esc(p)}</button>`).join('')}
+        </div>
+        <p class="note" id="fb"></p>
+      </div>`;
+    document.getElementById('back').onclick = goHome;
+    document.getElementById('play').onclick = ()=>{
+      speak(answer);
+      document.getElementById('choices').style.display='grid';
+    };
+    app.querySelectorAll('.choice').forEach(c=>{
+      c.onclick = ()=>{
+        if(c.dataset.p===answer){
+          c.classList.add('right');
+          document.getElementById('fb').textContent = 'Верно! Прочитай эту фразу вслух ещё раз.';
+          app.querySelectorAll('.choice').forEach(x=>x.disabled=true);
+          setTimeout(()=>renderCh7(1,{round:round+1, score:score+1}), 1600);
+        } else {
+          c.classList.add('wrong'); c.disabled=true;
+          document.getElementById('fb').textContent = 'Не та фраза. Послушай ещё раз!';
+        }
+      };
+    });
+  }
+}
+
+// ===================== ГЛАВА 8 (Финал) =====================
+function renderCh8(stage, data){
+  const steps = 5;
+  if(stage===0){
+    app.innerHTML = chapterHeader(8, 1, steps, 'Сначала — три слова') + `
+      <div class="subtitle">В финальных текстах есть три слова, которые мы просто запоминаем. Послушай и повтори каждое.</div>
+      <div class="memorize">
+        ${CH8.memorize.map(([w,r])=>`<div class="memo-card"><div class="w">${esc(w)}</div><div class="r">${esc(r)}</div>
+          <button class="icon-btn" data-say="${esc(w)}">🔊</button></div>`).join('')}
+      </div>
+      <div class="row-actions"><button class="btn" id="next">К тексту →</button></div>`;
+    document.getElementById('back').onclick = goHome;
+    document.getElementById('next').onclick = ()=>renderCh8(1, {ti:0});
+  } else if(stage===1 || stage===3){
+    const ti = stage===1 ? 0 : 1;
+    const t = CH8.texts[ti];
+    app.innerHTML = chapterHeader(8, stage===1?2:4, steps, t.title) + `
+      <div class="subtitle">Прочитай текст сама. Если застряла на слове — выдели его мысленно и проверь в предыдущих главах. Потом прочитай ещё раз с таймером.</div>
+      ${timerHTML()}
+      <div class="row-actions" style="justify-content:flex-start"><button class="btn small secondary" id="listen-all">🔊 Послушать весь текст</button></div>
+      <div class="textbook">${t.lines.map(l=>`<p>${esc(l)}</p>`).join('')}</div>
+      <div class="row-actions"><button class="btn" id="next">К вопросам →</button></div>`;
+    document.getElementById('back').onclick = goHome;
+    bindTimer();
+    document.getElementById('listen-all').onclick = ()=>speak(t.lines.join(' '));
+    document.getElementById('next').onclick = ()=>{ stopTimer(); renderCh8(stage+1, {ti, q:0, score:0}); };
+  } else if(stage===2 || stage===4){
+    const ti = stage===2 ? 0 : 1;
+    const t = CH8.texts[ti];
+    const {q, score} = data;
+    if(q>=t.quiz.length){
+      if(stage===2) renderCh8(3, {});
+      else renderChapterDone(8, false);
+      return;
+    }
+    const item = t.quiz[q];
+    app.innerHTML = chapterHeader(8, stage===2?3:5, steps, 'Проверим, что ты поняла') + `
+      <div class="card">
+        <p style="font-size:24px; margin-bottom:12px">${esc(item.q)}</p>
+        <div class="choice-grid" style="grid-template-columns:1fr">
+          ${item.options.map((o,i)=>`<button class="choice" data-i="${i}">${esc(o)}</button>`).join('')}
+        </div>
+        <p class="note" id="fb"></p>
+      </div>`;
+    document.getElementById('back').onclick = goHome;
+    speak(item.q);
+    app.querySelectorAll('.choice').forEach(c=>{
+      c.onclick = ()=>{
+        if(+c.dataset.i===item.right){
+          c.classList.add('right');
+          document.getElementById('fb').textContent = 'Верно!';
+          app.querySelectorAll('.choice').forEach(x=>x.disabled=true);
+          setTimeout(()=>renderCh8(stage, {ti, q:q+1, score:score+1}), 1000);
+        } else {
+          c.classList.add('wrong'); c.disabled=true;
+          document.getElementById('fb').textContent = 'Посмотри в текст ещё раз.';
+        }
+      };
+    });
+  }
+}
+
+// ===================== РОУТЕР =====================
+function renderChapter(n){
+  stopTimer();
+  if(n===1) renderCh1(0,0);
+  else if(n===2) renderCh2(0);
+  else if(n===3) renderCG(3,0);
+  else if(n===4) renderCG(4,0);
+  else if(n===5) renderCh5(0);
+  else if(n===6) renderCh6(0);
+  else if(n===7) renderCh7(0);
+  else if(n===8) renderCh8(0, {});
+}
+
+// Глобальная обработка кнопок озвучки и флажков
+app.addEventListener('click', (e)=>{
+  const say = e.target.closest('[data-say]');
+  if(say){ speak(say.dataset.say); return; }
+  const flag = e.target.closest('[data-flag]');
+  if(flag){
+    const on = toggleTrouble(flag.dataset.flag);
+    flag.classList.toggle('on', on);
+  }
+});
+
+renderHome();
+</script>
+</body>
+</html>
