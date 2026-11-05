@@ -35,26 +35,23 @@
   h2{font-size:24px; margin-bottom:6px;}
   .subtitle{color:var(--ink-soft); font-size:17px; margin-bottom:16px;}
   .card{background:var(--card); border-radius:18px; box-shadow:var(--shadow); padding:22px 24px; margin-bottom:16px;}
-  .word{font-size:34px; letter-spacing:.5px;}
   .word-row{
-    display:flex; align-items:center; gap:14px; padding:10px 6px;
+    display:flex; align-items:center; gap:12px; padding:10px 6px;
     border-bottom:1px dashed #e6dcc8;
   }
   .word-row:last-child{border-bottom:none;}
-  .word-row .w{flex:1; font-size:32px;}
+  .word-row .w{flex:1; font-size:32px; letter-spacing:.5px;}
   .icon-btn{
     font-family:inherit; border:none; background:var(--accent-soft); color:var(--accent);
     border-radius:10px; width:44px; height:44px; font-size:20px; cursor:pointer; flex:none;
   }
   .icon-btn.flag{background:#f3ede0; color:#b09a7a;}
   .icon-btn.flag.on{background:var(--berry-soft); color:var(--berry);}
-  .grid-letters{display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:16px 0;}
-  .letter-cell{
-    font-family:inherit; font-size:34px; padding:14px 0; text-align:center; background:#fff;
-    border:3px solid #e6dcc8; border-radius:14px; cursor:pointer; user-select:none;
+  .read-btn{
+    font-family:inherit; font-size:14px; border:2px solid var(--gold); background:#fdf6e3; color:#8a6a1f;
+    border-radius:10px; padding:8px 12px; cursor:pointer; flex:none;
   }
-  .letter-cell.hit{background:var(--accent-soft); border-color:var(--accent); color:var(--accent);}
-  .letter-cell.miss{background:var(--berry-soft); border-color:var(--berry);}
+  .say-btn[hidden]{display:none;}
   .columns{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
   .col-head{font-size:22px; text-align:center; padding:8px; border-radius:12px; margin-bottom:6px;}
   .pairs{display:grid; grid-template-columns:1fr 1fr; gap:8px 18px;}
@@ -74,6 +71,11 @@
   }
   .choice.right{background:var(--accent-soft); border-color:var(--ok);}
   .choice.wrong{background:var(--berry-soft); border-color:var(--bad);}
+  .choice.emoji{font-size:44px; padding:22px 12px;}
+  .big-word{
+    font-size:56px; text-align:center; padding:24px; background:#fff; border-radius:18px;
+    box-shadow:var(--shadow); margin:14px 0; letter-spacing:1px;
+  }
   .phrase{font-size:30px; padding:12px 6px; border-bottom:1px dashed #e6dcc8; display:flex; align-items:center; gap:12px;}
   .phrase:last-child{border-bottom:none;}
   .phrase .t{flex:1;}
@@ -81,7 +83,7 @@
   .textbook p{margin-bottom:10px;}
   .timer{
     display:inline-flex; align-items:center; gap:10px; background:#fff; border-radius:12px;
-    padding:8px 16px; font-size:20px; box-shadow:var(--shadow);
+    padding:8px 16px; font-size:20px; box-shadow:var(--shadow); margin-bottom:12px;
   }
   .timer b{font-variant-numeric:tabular-nums;}
   .record{font-size:15px; color:var(--ink-soft);}
@@ -96,8 +98,6 @@
   .slot .num{font-size:24px; font-weight:700;}
   .slot .nm{font-size:13px; color:var(--ink-soft); margin-top:4px; min-height:32px;}
   .slot.done{background:var(--accent-soft); border-color:var(--accent);}
-  .slot.locked{opacity:.45; cursor:default;}
-  .slot.locked:hover{transform:none;}
   .center{text-align:center;}
   .big-emoji{font-size:54px;}
   .note{color:var(--ink-soft); font-size:16px; margin-top:8px;}
@@ -106,12 +106,11 @@
   .memorize{display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin:12px 0;}
   .memo-card{background:#fff; border-radius:14px; box-shadow:var(--shadow); padding:16px 22px; text-align:center;}
   .memo-card .w{font-size:34px;}
-  .memo-card .r{font-size:16px; color:var(--ink-soft);}
   .progress-line{height:10px; background:#e6dcc8; border-radius:6px; overflow:hidden; margin:10px 0 20px;}
   .progress-line i{display:block; height:100%; background:var(--accent); border-radius:6px; transition:width .3s;}
   @media (max-width:560px){
-    .word-row .w{font-size:26px;} .word{font-size:28px;} .phrase{font-size:24px;}
-    .textbook{font-size:21px;} .choice{font-size:21px;} .grid-letters{grid-template-columns:repeat(4,1fr);}
+    .word-row .w{font-size:26px;} .phrase{font-size:24px;} .big-word{font-size:44px;}
+    .textbook{font-size:21px;} .choice{font-size:21px;} .choice.emoji{font-size:38px;}
     h1{font-size:25px;}
   }
 </style>
@@ -121,7 +120,7 @@
 <script type="module">
 // ===================== ДАННЫЕ =====================
 const CHAPTERS = [
-  {id:1, name:'Буквы вернулись'},
+  {id:1, name:'Как это звучит?'},
   {id:2, name:'Слова-близнецы'},
   {id:3, name:'Два голоса C'},
   {id:4, name:'Два голоса G'},
@@ -131,22 +130,34 @@ const CHAPTERS = [
   {id:8, name:'Книга восстановлена'},
 ];
 
+// Глава 1: звуки, а не названия букв. p=/п/, h=/х/, n=/н/
 const CH1 = {
-  grids:[
-    {title:'Нажми на все b', targets:['b'], cells:'bddbdbbddbdbdbbdbdbd'.split(''),
-     rule:'b — это «би»: палочка слева, кружок справа. d — это «ди»: кружок слева, палочка справа.'},
-    {title:'Нажми на все h', targets:['h'], cells:'nhпhnпhпnhhпnпhnпnhh'.split(''),
-     rule:'n — это «эн»: выглядит как русская «п», но читается «н». h — это «эйч»: читается легко, почти как наша «х». А «п» в английском нет совсем!'},
-    {title:'Нажми на все p', targets:['p'], cells:'pрppрpрppрpрppрpрpрp'.split(''),
-     rule:'p — это «пи»: читается как наша «п». А «р» — русская буква, в английском её нет!'},
+  rules:[
+    'p читаем как нашу «п»: pen — «пэн».',
+    'h — лёгкий звук, будто дышим на стекло: hot — «хот».',
+    'n выглядит как русская «п», но читается «н»: net — «нэт».',
+  ],
+  // слово, правильное звучание, обманка
+  sounds:[
+    ['pen','пэн','рэн'], ['pat','пэт','рэт'], ['pot','пот','рот'], ['cap','кэп','кэр'],
+    ['hot','хот','нот'], ['hat','хэт','нэт'], ['hen','хэн','нэн'], ['hop','хоп','ноп'],
+    ['net','нэт','пэт'], ['name','нэйм','пэйм'],
+  ],
+  caps:[
+    ['POT','пот','рот'], ['HOT','хот','нот'], ['HEN','хэн','нэн'], ['NET','нэт','пэт'],
+    ['PEN','пэн','рэн'], ['HAT','хэт','нэт'], ['TOP','топ','тор'],
   ],
   words:['big','bad','bat','box','dog','dig','dad','red','hat','hen','hot','hand','not','pen','name','nine','can','pat','pop','cap'],
 };
 
+// Глава 2: b/d, гласные и звуковые пары h/n/p
 const CH2 = {
-  pairs:[['bed','bad'],['big','dig'],['bog','dog'],['bud','dud'],['hot','not'],['bag','bug'],
-         ['bat','bet'],['hat','hut'],['bed','bud'],['bet','bit'],['bat','but'],['sit','set'],
-         ['not','nut'],['dig','dug'],['big','beg'],['mad','mud']],
+  pairs:[['bed','bad'],['big','dig'],['big','beg'],['hot','not'],['hut','nut'],['hen','pen'],
+         ['hip','nip'],['hat','pat'],['hop','pop'],['bag','bug'],['bat','bet'],['sit','set'],
+         ['mad','mud'],['bat','but'],['not','nut'],['dog','dot']],
+  emoji:{bed:'🛏️', dad:'👨', dog:'🐶', pig:'🐷', cat:'🐱', box:'📦', fox:'🦊', cup:'☕',
+         bug:'🐛', bus:'🚌', sun:'☀️', hat:'🎩', map:'🗺️', egg:'🥚', fish:'🐟', pen:'🖊️'},
+  emojiRounds:['bed','dad','dog','pig','cat','box','fox','cup'],
 };
 
 const CH3 = {
@@ -158,16 +169,16 @@ const CH3 = {
 
 const CH4 = {
   g:['gap','gas','gum','got','gate','game','bag','big','dog'],
-  j:['gem','gel','giant','age','cage','page','stage','huge','magic'],
-  exceptions:[['get','гет'],['give','гив'],['girl','гёл']],
-  phrases:['A big dog.','A gem in a bag.','A page in a book.','A huge cage.','A dog at the gate.','A magic game.'],
+  j:['gem','hinge','giant','age','cage','page','stage','huge','magic'],
+  exceptions:['get','give','girl'],
+  phrases:['A big dog.','A gem in a bag.','A page on a bed.','A huge cage.','A dog at the gate.','A magic game.'],
   rule:'G перед E, I, Y обычно читается как /дж/. В остальных случаях — как /г/.',
 };
 
 const CH5 = {
-  qu:['quiz','quit','quick','quack','quilt'],
-  x:['box','fox','six','fix','mix','wax'],
-  phrases:['Six red pens.','A fox in a box.','Fix the bed.','Mix it.','A quick cat.','A red quilt.'],
+  qu:['quiz','quit','quick','quack'],
+  x:['box','fox','six','fix','mix','next'],
+  phrases:['Six red pens.','A fox in a box.','Fix the bed.','Mix it.','A quick cat.','A quick fox.'],
 };
 
 const CH6 = {
@@ -176,13 +187,13 @@ const CH6 = {
     ['hen','pen','pin','pan','pat','hat'],
     ['cap','cup','cut','cat','can','man'],
     ['ice','nice','rice','race','face'],
-    ['age','cage','page','pale','pal','pan'],
+    ['age','cage','cape','cap','cat','can'],
   ],
 };
 
 const CH7 = {
   words:['cat','ice','gem','box','quiz','dog','cage','six','name','cup','pen','hat','big','nice','page',
-         'fox','cut','quick','bag','face','hot','zip','vet','mix','cake','huge','bed','not','game','wax'],
+         'fox','cut','quick','bag','face','hot','zip','vet','mix','cake','huge','bed','not','game','next'],
   twins:[
     ['A big dog.','A bad dog.'],
     ['A hen in a pen.','A pen in a bag.'],
@@ -196,31 +207,31 @@ const CH7 = {
 };
 
 const CH8 = {
-  memorize:[['puts','путс'],['what','уот'],['says','сез']],
   texts:[
     {title:'A box in the city',
      lines:['Ben is in the city. He has a big box.',
             'A dog runs to Ben. It digs and digs.',
-            'Ben puts the box on a bench.',
-            '"What is in it?" asks a man.',
             'Ben lifts the lid.',
             'Six red pens! A nice gem! A page!',
-            'The dog has the page.',
-            '"Drop it!" says Ben.'],
+            'The dog has the page. It runs and runs.',
+            'Ben has the box. He is glad.'],
      quiz:[
-       {q:'What is in the box?', options:['Six red pens, a gem and a page.','A big cake.','Mice and rice.'], right:0},
-       {q:'Who has the page?', options:['Ben.','The dog.','The man.'], right:1},
+       {q:'Is Ben in the city?', options:['Yes.','No.'], right:0},
+       {q:'Is the box big?', options:['Yes.','No.'], right:0},
+       {q:'The dog has…', options:['a pen','a page','a gem'], right:1},
      ]},
-    {title:'Max and the quilt',
-     lines:['Max has a red quilt. A cat sits on it.',
-            '"Get up!" says Max. The cat is quick.',
-            'It runs to a box. Max pets the cat.',
-            '"What a nice cat!" says Max.'],
+    {title:'Max and the fox',
+     lines:['Max has a fox. It is quick and red.',
+            'The fox runs to a box. It sits in it.',
+            'A fox in a box! Max is glad.'],
      quiz:[
-       {q:'What does Max have?', options:['A red quilt.','A red box.','A quick fox.'], right:0},
-       {q:'Where does the cat run?', options:['To the city.','To a bench.','To a box.'], right:2},
+       {q:'Is the fox quick?', options:['Yes.','No.'], right:0},
+       {q:'The fox sits…', options:['in a box','in a bag','on a bed'], right:0},
      ]},
   ],
+  // финальный смешанный раунд на время: все четыре трудности сразу
+  records:['bed','dig','hat','pen','hop','net','city','rice','cap','face','gem','page',
+           'big','huge','quiz','quick','box','six','next','fix','name','kite','home','cute'],
 };
 
 // ===================== ХРАНИЛИЩЕ =====================
@@ -228,9 +239,9 @@ const store = {
   get(k, d){ try{ const v = localStorage.getItem('pk_'+k); return v===null?d:JSON.parse(v);}catch(e){return d;} },
   set(k, v){ try{ localStorage.setItem('pk_'+k, JSON.stringify(v)); }catch(e){} },
 };
-const getProgress = () => store.get('progress', {});   // {chapterId: {done:true, best:seconds}}
+const getProgress = () => store.get('progress', {});
 const setProgress = (p) => store.set('progress', p);
-const getTrouble = () => store.get('trouble', []);     // [word,...]
+const getTrouble = () => store.get('trouble', []);
 const setTrouble = (t) => store.set('trouble', t);
 
 function markDone(chId, seconds){
@@ -267,7 +278,7 @@ function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
 function shuffle(a){ const r=[...a]; for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [r[i],r[j]]=[r[j],r[i]];} return r; }
 function fmtTime(s){ if(s==null) return '—'; const m=Math.floor(s/60), ss=s%60; return (m? m+' мин ':'')+ss+' с'; }
 
-// Таймер экрана: стартует только по кнопке «Старт»
+// Таймер: стартует только по кнопке «Старт»
 let timerInt = null, timerSec = 0, timerRunning = false, timerUsed = false;
 function startTimer(reset){
   stopTimer(); if(reset) timerSec = 0;
@@ -287,28 +298,30 @@ function bindTimer(){
   if(b) b.onclick = ()=>{ if(!timerRunning){ timerUsed = true; startTimer(true); b.textContent='Идёт…'; b.disabled=true; } };
 }
 
-// Подсветка qu / x (состояние переключателя)
+// Подсветка qu / x
 let highlightOn = true;
 function hl(word){
   if(!highlightOn) return esc(word);
   return esc(word).replace(/qu/gi,'<span class="hl-qu">qu</span>').replace(/x/gi,'<span class="hl-x">x</span>');
 }
 
-// Строка слова: слово + прослушать + флажок «сложно»
+// Строка слова: сначала «Прочитала», потом открывается 🔊
 function wordRow(w, useHl){
   const trouble = getTrouble().includes(w);
   return `<div class="word-row">
     <span class="w">${useHl?hl(w):esc(w)}</span>
-    <button class="icon-btn" data-say="${esc(w)}" title="Послушать">🔊</button>
+    <button class="read-btn" data-read>Прочитала</button>
+    <button class="icon-btn say-btn" data-say="${esc(w)}" title="Послушать" hidden>🔊</button>
     <button class="icon-btn flag ${trouble?'on':''}" data-flag="${esc(w)}" title="Мне ещё потренировать">🚩</button>
   </div>`;
 }
 function phraseRow(p){
   return `<div class="phrase"><span class="t">${esc(p)}</span>
-    <button class="icon-btn" data-say="${esc(p)}" title="Послушать">🔊</button></div>`;
+    <button class="read-btn" data-read>Прочитала</button>
+    <button class="icon-btn say-btn" data-say="${esc(p)}" title="Послушать" hidden>🔊</button></div>`;
 }
 
-// ===================== ЭКРАНЫ =====================
+// ===================== ОБЩИЕ ЭКРАНЫ =====================
 function goHome(){ stopTimer(); renderHome(); }
 
 function renderHome(){
@@ -335,7 +348,7 @@ function renderHome(){
     <div class="row-actions">
       <button class="btn secondary" id="btn-trouble">🚩 Мне ещё потренировать (${trouble.length})</button>
     </div>
-    <p class="note center">Как работать: прочитай сама → послушай 🔊 → прочитай ещё раз. Сложное слово отмечай 🚩.</p>
+    <p class="note center">Как работать: читай сама → нажми «Прочитала» → послушай 🔊 и проверь себя. Сложное слово отмечай 🚩.</p>
   `;
   app.querySelectorAll('.slot').forEach(s=> s.onclick = ()=> renderChapter(+s.dataset.ch));
   document.getElementById('btn-trouble').onclick = renderTrouble;
@@ -355,7 +368,6 @@ function renderTrouble(){
   if(clear) clear.onclick = ()=>{ setTrouble([]); renderTrouble(); };
 }
 
-// --- Завершение главы ---
 function renderChapterDone(chId, withTime){
   const secs = (withTime && timerUsed) ? timerSec : null;
   stopTimer(); timerUsed = false;
@@ -388,40 +400,56 @@ function chapterHeader(chId, step, steps, title){
     <h2>${title}</h2>`;
 }
 
+// Викторина «как это звучит»: rounds = [word, correct, wrong]
+function renderSoundQuiz(chId, step, steps, title, rounds, round, score, onFinish){
+  if(round>=rounds.length){ onFinish(score); return; }
+  const [word, right, wrong] = rounds[round];
+  const options = shuffle([right, wrong]);
+  app.innerHTML = chapterHeader(chId, step, steps, title) + `
+    <div class="subtitle">Как звучит это слово? Прочитай про себя и выбери. Раунд ${round+1} из ${rounds.length}. Верно: ${score}</div>
+    <div class="big-word">${esc(word)}</div>
+    <div class="choice-grid">
+      ${options.map(o=>`<button class="choice" data-o="${esc(o)}">[ ${esc(o)} ]</button>`).join('')}
+    </div>
+    <p class="note center" id="fb"></p>`;
+  document.getElementById('back').onclick = goHome;
+  app.querySelectorAll('.choice').forEach(c=>{
+    c.onclick = ()=>{
+      if(c.dataset.o===right){
+        c.classList.add('right');
+        speak(word);
+        document.getElementById('fb').textContent = 'Верно! Слушай и повтори.';
+        app.querySelectorAll('.choice').forEach(x=>x.disabled=true);
+        setTimeout(()=>renderSoundQuiz(chId, step, steps, title, rounds, round+1, score+1, onFinish), 1500);
+      } else {
+        c.classList.add('wrong'); c.disabled=true;
+        document.getElementById('fb').textContent = 'Не так. Вспомни правило и попробуй ещё раз!';
+      }
+    };
+  });
+}
+
 // ===================== ГЛАВА 1 =====================
-function renderCh1(stage, gridIdx){
-  // stage 0: правила+сетки, 1: слова
+function renderCh1(stage){
+  const steps = 4;
   if(stage===0){
-    const g = CH1.grids[gridIdx];
-    const found = new Set();
-    app.innerHTML = chapterHeader(1, gridIdx+1, 4, 'Буквы вернулись') + `
-      <div class="rule">${g.rule}</div>
-      <div class="card center">
-        <h2 style="font-size:22px">${g.title}</h2>
-        <div class="grid-letters" id="grid">
-          ${g.cells.map((c,i)=>`<div class="letter-cell" data-i="${i}">${c==='р'||c==='п'?c:esc(c)}</div>`).join('')}
-        </div>
-        <p class="note" id="msg">Нажимай только на нужные буквы.</p>
-      </div>`;
+    app.innerHTML = chapterHeader(1, 1, steps, 'Как это звучит?') + `
+      <div class="subtitle">Три буквы-хитрюги. Важно, как они ЗВУЧАТ:</div>
+      ${CH1.rules.map(r=>`<div class="rule">${r}</div>`).join('')}
+      <div class="row-actions"><button class="btn" id="next">Проверить себя →</button></div>`;
     document.getElementById('back').onclick = goHome;
-    const need = g.cells.map((c,i)=>g.targets.includes(c)?i:null).filter(x=>x!==null);
-    app.querySelectorAll('.letter-cell').forEach(cell=>{
-      cell.onclick = ()=>{
-        const i = +cell.dataset.i;
-        if(g.targets.includes(g.cells[i])){
-          if(!found.has(i)){ found.add(i); cell.classList.add('hit'); speak(g.cells[i]); }
-          if(found.size===need.length){
-            document.getElementById('msg').textContent = 'Отлично! Все буквы найдены.';
-            setTimeout(()=>{ gridIdx+1 < CH1.grids.length ? renderCh1(0, gridIdx+1) : renderCh1(1); }, 900);
-          }
-        } else {
-          cell.classList.add('miss'); setTimeout(()=>cell.classList.remove('miss'), 500);
-        }
-      };
-    });
+    document.getElementById('next').onclick = ()=>renderCh1(1);
+  } else if(stage===1){
+    renderSoundQuiz(1, 2, steps, 'Как это звучит?', shuffle(CH1.sounds), 0, 0, ()=>renderCh1(2));
+  } else if(stage===2){
+    app.innerHTML = chapterHeader(1, 3, steps, 'Заглавные обманщики') + `
+      <div class="subtitle">А теперь то же самое, но ЗАГЛАВНЫМИ. Такие слова можно прочитать и по-русски — не попадись!</div>
+      <div class="row-actions"><button class="btn" id="go">Начать →</button></div>`;
+    document.getElementById('back').onclick = goHome;
+    document.getElementById('go').onclick = ()=>renderSoundQuiz(1, 3, steps, 'Заглавные обманщики', shuffle(CH1.caps), 0, 0, ()=>renderCh1(3));
   } else {
-    app.innerHTML = chapterHeader(1, 4, 4, 'Буквы вернулись') + `
-      <div class="subtitle">Теперь прочитай слова. В каждом спряталась буква из задания — не дай ей себя обмануть!</div>
+    app.innerHTML = chapterHeader(1, 4, steps, 'Читаем слова') + `
+      <div class="subtitle">Теперь прочитай слова. В каждом спряталась буква-хитрюга — не дай ей себя обмануть!</div>
       ${timerHTML()}
       <div class="card">${CH1.words.map(w=>wordRow(w)).join('')}</div>
       <div class="row-actions"><button class="btn" id="done">Прочитала всё ✓</button></div>`;
@@ -435,21 +463,26 @@ function renderCh1(stage, gridIdx){
 
 // ===================== ГЛАВА 2 =====================
 function renderCh2(mode, data){
-  // mode 0: пары, 1: вперемешку, 2: послушай и найди
+  const steps = 4;
   if(mode===0){
-    app.innerHTML = chapterHeader(2, 1, 3, 'Слова-близнецы') + `
+    app.innerHTML = chapterHeader(2, 1, steps, 'Слова-близнецы') + `
       <div class="subtitle">Слова очень похожи! Прочитай каждую пару. Чем они различаются?</div>
       <div class="card"><div class="pairs">
         ${CH2.pairs.map(([a,b])=>`
-          <div class="pair-word"><span>${esc(a)}</span><button class="icon-btn" data-say="${esc(a)}">🔊</button></div>
-          <div class="pair-word"><span>${esc(b)}</span><button class="icon-btn" data-say="${esc(b)}">🔊</button></div>`).join('')}
+          <div class="pair-word"><span>${esc(a)}</span></div>
+          <div class="pair-word"><span>${esc(b)}</span></div>`).join('')}
       </div></div>
+      <p class="note">Прочитала пару? Нажми на первое слово — услышишь его и проверишь себя.</p>
       <div class="row-actions"><button class="btn" id="next">Дальше: вперемешку →</button></div>`;
     document.getElementById('back').onclick = goHome;
+    app.querySelectorAll('.pair-word').forEach(pw=>{
+      pw.style.cursor='pointer';
+      pw.onclick = ()=>speak(pw.querySelector('span').textContent);
+    });
     document.getElementById('next').onclick = ()=>renderCh2(1);
   } else if(mode===1){
     const words = shuffle(CH2.pairs.flat());
-    app.innerHTML = chapterHeader(2, 2, 3, 'Слова-близнецы') + `
+    app.innerHTML = chapterHeader(2, 2, steps, 'Слова-близнецы') + `
       <div class="subtitle">Те же слова, но теперь вперемешку. Прочитай каждое, потом послушай и проверь себя.</div>
       ${timerHTML()}
       <div class="card">${words.map(w=>wordRow(w)).join('')}</div>
@@ -457,15 +490,14 @@ function renderCh2(mode, data){
     document.getElementById('back').onclick = goHome;
     bindTimer();
     document.getElementById('next').onclick = ()=>{ stopTimer(); renderCh2(2, {round:0, score:0}); };
-  } else {
-    // послушай и найди: 8 раундов по 4 варианта
+  } else if(mode===2){
     const {round, score} = data;
-    if(round>=8){ renderChapterDone(2, false); return; }
+    if(round>=8){ renderCh2(3, {round:0, score:0}); return; }
     const pair = CH2.pairs[round*2 % CH2.pairs.length];
     const pair2 = CH2.pairs[(round*2+1) % CH2.pairs.length];
     const options = shuffle([pair[0], pair[1], pair2[0], pair2[1]]);
     const answer = pair[Math.floor(Math.random()*2)];
-    app.innerHTML = chapterHeader(2, 3, 3, 'Слова-близнецы') + `
+    app.innerHTML = chapterHeader(2, 3, steps, 'Послушай и найди') + `
       <div class="subtitle">Послушай слово и нажми на него. Раунд ${round+1} из 8. Верно: ${score}</div>
       <div class="row-actions"><button class="btn" id="play">🔊 Послушать слово</button></div>
       <div class="choice-grid">
@@ -485,6 +517,35 @@ function renderCh2(mode, data){
         } else {
           c.classList.add('wrong'); c.disabled = true;
           document.getElementById('fb').textContent = 'Не то. Послушай ещё раз!';
+        }
+      };
+    });
+  } else {
+    // прочитай → выбери картинку
+    const {round, score} = data;
+    const words = CH2.emojiRounds;
+    if(round>=words.length){ renderChapterDone(2, false); return; }
+    const word = words[round];
+    const others = shuffle(Object.keys(CH2.emoji).filter(k=>k!==word)).slice(0,3);
+    const options = shuffle([word, ...others]);
+    app.innerHTML = chapterHeader(2, 4, steps, 'Прочитай и выбери картинку') + `
+      <div class="subtitle">Прочитай слово и нажми на подходящую картинку. Раунд ${round+1} из ${words.length}. Верно: ${score}</div>
+      <div class="big-word">${esc(word)}</div>
+      <div class="choice-grid">
+        ${options.map(o=>`<button class="choice emoji" data-o="${o}">${CH2.emoji[o]}</button>`).join('')}
+      </div>
+      <p class="note center" id="fb"></p>`;
+    document.getElementById('back').onclick = goHome;
+    app.querySelectorAll('.choice').forEach(c=>{
+      c.onclick = ()=>{
+        if(c.dataset.o===word){
+          c.classList.add('right');
+          speak(word);
+          app.querySelectorAll('.choice').forEach(x=>x.disabled=true);
+          setTimeout(()=>renderCh2(3,{round:round+1, score:score+1}), 1200);
+        } else {
+          c.classList.add('wrong'); c.disabled=true;
+          document.getElementById('fb').textContent = 'Не то. Прочитай слово ещё раз, по буквам.';
         }
       };
     });
@@ -523,20 +584,18 @@ function renderCG(chId, stage){
       <div class="row-actions"><button class="btn" id="next">${chId===4?'Дальше →':'Дальше: фразы →'}</button></div>`;
     document.getElementById('back').onclick = goHome;
     bindTimer();
-    document.getElementById('next').onclick = ()=>{ stopTimer(); renderCG(chId, chId===4?2:2); };
+    document.getElementById('next').onclick = ()=>{ stopTimer(); renderCG(chId, 2); };
   } else if(stage===2 && chId===4){
-    // карточка исключений только для G
     app.innerHTML = chapterHeader(4, 3, steps, 'Эти слова запоминаем') + `
       <div class="subtitle">Эти три слова — хитрые. В них G перед E и I всё равно читается как /г/. Их просто запоминаем:</div>
       <div class="memorize">
-        ${CH4.exceptions.map(([w,r])=>`<div class="memo-card"><div class="w">${esc(w)}</div><div class="r">${esc(r)}</div>
+        ${CH4.exceptions.map(w=>`<div class="memo-card"><div class="w">${esc(w)}</div>
           <button class="icon-btn" data-say="${esc(w)}">🔊</button></div>`).join('')}
       </div>
       <div class="row-actions"><button class="btn" id="next">Дальше: фразы →</button></div>`;
     document.getElementById('back').onclick = goHome;
     document.getElementById('next').onclick = ()=>renderCG(4, 3.5);
   } else {
-    // фразы
     const stepNum = chId===4 ? 4 : 3;
     app.innerHTML = chapterHeader(chId, stepNum, steps, `Фразы с ${letters}`) + `
       <div class="subtitle">Прочитай фразы. Сначала сама, потом послушай и прочитай ещё раз.</div>
@@ -680,40 +739,32 @@ function renderCh7(stage, data){
 // ===================== ГЛАВА 8 (Финал) =====================
 function renderCh8(stage, data){
   const steps = 5;
-  if(stage===0){
-    app.innerHTML = chapterHeader(8, 1, steps, 'Сначала — три слова') + `
-      <div class="subtitle">В финальных текстах есть три слова, которые мы просто запоминаем. Послушай и повтори каждое.</div>
-      <div class="memorize">
-        ${CH8.memorize.map(([w,r])=>`<div class="memo-card"><div class="w">${esc(w)}</div><div class="r">${esc(r)}</div>
-          <button class="icon-btn" data-say="${esc(w)}">🔊</button></div>`).join('')}
-      </div>
-      <div class="row-actions"><button class="btn" id="next">К тексту →</button></div>`;
-    document.getElementById('back').onclick = goHome;
-    document.getElementById('next').onclick = ()=>renderCh8(1, {ti:0});
-  } else if(stage===1 || stage===3){
-    const ti = stage===1 ? 0 : 1;
+  if(stage===0 || stage===2){
+    const ti = stage===0 ? 0 : 1;
     const t = CH8.texts[ti];
-    app.innerHTML = chapterHeader(8, stage===1?2:4, steps, t.title) + `
-      <div class="subtitle">Прочитай текст сама. Если застряла на слове — выдели его мысленно и проверь в предыдущих главах. Потом прочитай ещё раз с таймером.</div>
+    app.innerHTML = chapterHeader(8, stage+1, steps, t.title) + `
+      <div class="subtitle">Прочитай текст сама. Потом прочитай ещё раз с таймером.</div>
       ${timerHTML()}
-      <div class="row-actions" style="justify-content:flex-start"><button class="btn small secondary" id="listen-all">🔊 Послушать весь текст</button></div>
       <div class="textbook">${t.lines.map(l=>`<p>${esc(l)}</p>`).join('')}</div>
-      <div class="row-actions"><button class="btn" id="next">К вопросам →</button></div>`;
+      <div class="row-actions">
+        <button class="btn small secondary" id="listen-all">🔊 Послушать весь текст</button>
+        <button class="btn" id="next">К вопросам →</button>
+      </div>`;
     document.getElementById('back').onclick = goHome;
     bindTimer();
     document.getElementById('listen-all').onclick = ()=>speak(t.lines.join(' '));
     document.getElementById('next').onclick = ()=>{ stopTimer(); renderCh8(stage+1, {ti, q:0, score:0}); };
-  } else if(stage===2 || stage===4){
-    const ti = stage===2 ? 0 : 1;
+  } else if(stage===1 || stage===3){
+    const ti = stage===1 ? 0 : 1;
     const t = CH8.texts[ti];
     const {q, score} = data;
     if(q>=t.quiz.length){
-      if(stage===2) renderCh8(3, {});
-      else renderChapterDone(8, false);
+      if(stage===1) renderCh8(2, {});
+      else renderCh8(4, {});
       return;
     }
     const item = t.quiz[q];
-    app.innerHTML = chapterHeader(8, stage===2?3:5, steps, 'Проверим, что ты поняла') + `
+    app.innerHTML = chapterHeader(8, stage+1, steps, 'Проверим, что ты поняла') + `
       <div class="card">
         <p style="font-size:24px; margin-bottom:12px">${esc(item.q)}</p>
         <div class="choice-grid" style="grid-template-columns:1fr">
@@ -736,13 +787,26 @@ function renderCh8(stage, data){
         }
       };
     });
+  } else {
+    // финальный раунд рекордов: всё вперемешку на время
+    const words = shuffle(CH8.records);
+    app.innerHTML = chapterHeader(8, 5, steps, 'Раунд рекордов') + `
+      <div class="subtitle">Финал! Все трудности разом: b/d, h/n/p, два голоса C и G, qu/x. Включи таймер, прочитай всё — и побей свой рекорд!</div>
+      ${timerHTML()}
+      <div class="card">${words.map(w=>wordRow(w)).join('')}</div>
+      <div class="row-actions"><button class="btn" id="done">Прочитала всё ✓</button></div>`;
+    document.getElementById('back').onclick = goHome;
+    bindTimer();
+    const p = getProgress()[8];
+    if(p && p.best!=null) document.getElementById('tm-best').textContent = 'рекорд: '+fmtTime(p.best);
+    document.getElementById('done').onclick = ()=>renderChapterDone(8, true);
   }
 }
 
 // ===================== РОУТЕР =====================
 function renderChapter(n){
   stopTimer();
-  if(n===1) renderCh1(0,0);
+  if(n===1) renderCh1(0);
   else if(n===2) renderCh2(0);
   else if(n===3) renderCG(3,0);
   else if(n===4) renderCG(4,0);
@@ -752,8 +816,15 @@ function renderChapter(n){
   else if(n===8) renderCh8(0, {});
 }
 
-// Глобальная обработка кнопок озвучки и флажков
+// Глобальные кнопки: «Прочитала» открывает 🔊; 🔊 озвучивает; 🚩 — сложное
 app.addEventListener('click', (e)=>{
+  const read = e.target.closest('[data-read]');
+  if(read){
+    const say = read.parentElement.querySelector('[data-say]');
+    if(say) say.hidden = false;
+    read.hidden = true;
+    return;
+  }
   const say = e.target.closest('[data-say]');
   if(say){ speak(say.dataset.say); return; }
   const flag = e.target.closest('[data-flag]');
