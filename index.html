@@ -347,11 +347,19 @@ function renderHome(){
     </div>
     <div class="row-actions">
       <button class="btn secondary" id="btn-trouble">🚩 Мне ещё потренировать (${trouble.length})</button>
+      ${doneCount>0?`<button class="btn ghost" id="btn-reset">🔄 Начать книгу заново</button>`:''}
     </div>
     <p class="note center">Как работать: читай сама → нажми «Прочитала» → послушай 🔊 и проверь себя. Сложное слово отмечай 🚩.</p>
   `;
   app.querySelectorAll('.slot').forEach(s=> s.onclick = ()=> renderChapter(+s.dataset.ch));
   document.getElementById('btn-trouble').onclick = renderTrouble;
+  const rst = document.getElementById('btn-reset');
+  if(rst) rst.onclick = ()=>{
+    if(confirm('Начать книгу заново? Все главы снова станут непройденными, рекорды сотрутся. Список сложных слов 🚩 останется.')){
+      setProgress({});
+      renderHome();
+    }
+  };
 }
 
 function renderTrouble(){
